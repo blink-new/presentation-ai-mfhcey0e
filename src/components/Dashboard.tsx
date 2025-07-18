@@ -207,7 +207,7 @@ export function Dashboard({ presentations, onCreatePresentation, onOpenPresentat
                           {new Date(presentation.updatedAt).toLocaleDateString()}
                         </CardDescription>
                       </div>
-                      <Badge variant="outline">{presentation.slides.length} slides</Badge>
+                      <Badge variant="outline">{Array.isArray(presentation.slides) ? presentation.slides.length : 0} slides</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -217,13 +217,13 @@ export function Dashboard({ presentations, onCreatePresentation, onOpenPresentat
                         Theme: {presentation.theme}
                       </div>
                       <div className="flex gap-1">
-                        {presentation.slides.slice(0, 4).map((_, index) => (
+                        {Array.isArray(presentation.slides) && presentation.slides.slice(0, 4).map((_, index) => (
                           <div
                             key={index}
                             className="w-8 h-6 bg-gradient-to-br from-primary/20 to-accent/20 rounded border"
                           />
                         ))}
-                        {presentation.slides.length > 4 && (
+                        {Array.isArray(presentation.slides) && presentation.slides.length > 4 && (
                           <div className="w-8 h-6 bg-muted rounded border flex items-center justify-center">
                             <span className="text-xs text-muted-foreground">+{presentation.slides.length - 4}</span>
                           </div>

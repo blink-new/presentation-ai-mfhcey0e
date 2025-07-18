@@ -135,9 +135,25 @@ function App() {
       })
       
       if (data.length > 0) {
+        let slides: Slide[] = []
+        
+        // Safely parse slides with error handling
+        try {
+          const parsedSlides = JSON.parse(data[0].slides || '[]')
+          if (Array.isArray(parsedSlides)) {
+            slides = parsedSlides
+          } else {
+            console.warn('Slides data is not an array, using empty array')
+            slides = []
+          }
+        } catch (parseError) {
+          console.error('Failed to parse slides JSON:', parseError)
+          slides = []
+        }
+        
         const presentation: Presentation = {
           ...data[0],
-          slides: JSON.parse(data[0].slides)
+          slides
         }
         setCurrentPresentation(presentation)
         setCurrentView('editor')

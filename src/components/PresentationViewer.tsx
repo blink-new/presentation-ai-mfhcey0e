@@ -32,7 +32,9 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
   const [isAutoPlay, setIsAutoPlay] = useState(false)
   const [showControls, setShowControls] = useState(true)
 
-  const currentSlide = presentation.slides[currentSlideIndex]
+  const currentSlide = Array.isArray(presentation.slides) && presentation.slides.length > 0 
+    ? presentation.slides[currentSlideIndex] 
+    : null
   const themeColors = themes.find(t => t.id === presentation.theme)?.colors || 'from-gray-400 to-gray-600'
 
   useEffect(() => {
@@ -40,7 +42,8 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
     if (isAutoPlay) {
       interval = setInterval(() => {
         setCurrentSlideIndex((prev) => {
-          if (prev >= presentation.slides.length - 1) {
+          const slidesLength = Array.isArray(presentation.slides) ? presentation.slides.length : 0
+          if (prev >= slidesLength - 1) {
             setIsAutoPlay(false)
             return prev
           }
@@ -49,7 +52,7 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
       }, 5000) // 5 seconds per slide
     }
     return () => clearInterval(interval)
-  }, [isAutoPlay, presentation.slides.length])
+  }, [isAutoPlay, presentation.slides])
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -96,10 +99,11 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
   }, [isFullscreen, currentSlideIndex])
 
   const nextSlide = useCallback(() => {
-    if (currentSlideIndex < presentation.slides.length - 1) {
+    const slidesLength = Array.isArray(presentation.slides) ? presentation.slides.length : 0
+    if (currentSlideIndex < slidesLength - 1) {
       setCurrentSlideIndex(currentSlideIndex + 1)
     }
-  }, [currentSlideIndex, presentation.slides.length])
+  }, [currentSlideIndex, presentation.slides])
 
   const prevSlide = useCallback(() => {
     if (currentSlideIndex > 0) {
@@ -135,14 +139,14 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
 
     return (
       <div className={`h-full bg-gradient-to-br ${themeColors} p-8 text-white flex flex-col`}>
-        {currentSlide.layout === 'title' && (
+        {currentSlide && currentSlide.layout === 'title' && (
           <div className="h-full flex flex-col justify-center text-center">
             <h1 className="text-6xl font-bold mb-8 leading-tight">{currentSlide.title}</h1>
             <p className="text-2xl opacity-90 leading-relaxed max-w-4xl mx-auto">{currentSlide.content}</p>
           </div>
         )}
         
-        {currentSlide.layout === 'content' && (
+        {currentSlide && currentSlide.layout === 'content' && (
           <div className="h-full flex flex-col">
             <h2 className="text-5xl font-bold mb-8">{currentSlide.title}</h2>
             <div className="flex-1 flex items-center">
@@ -151,7 +155,7 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
           </div>
         )}
         
-        {currentSlide.layout === 'image' && (
+        {currentSlide && currentSlide.layout === 'image' && (
           <div className="h-full flex flex-col">
             <h2 className="text-5xl font-bold mb-8">{currentSlide.title}</h2>
             <div className="flex-1 flex items-center justify-center">
@@ -170,7 +174,7 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
           </div>
         )}
         
-        {currentSlide.layout === 'split' && (
+        {currentSlide && currentSlide.layout === 'split' && (
           <div className="h-full flex flex-col">
             <h2 className="text-5xl font-bold mb-8">{currentSlide.title}</h2>
             <div className="flex-1 grid grid-cols-2 gap-12 items-center">
@@ -214,7 +218,7 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
               <div>
                 <h1 className="font-semibold">{presentation.title}</h1>
                 <p className="text-sm text-white/70">
-                  Slide {currentSlideIndex + 1} of {presentation.slides.length}
+                  Slide {currentSlideIndex + 1} of {Array.isArray(presentation.slides) ? presentation.slides.length : 0}
                 </p>
               </div>
             </div>
@@ -256,7 +260,7 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
             variant="ghost"
             size="lg"
             onClick={nextSlide}
-            disabled={currentSlideIndex === presentation.slides.length - 1}
+            disabled={!Array.isArray(presentation.slides) || currentSlideIndex === presentation.slides.length - 1}
             className="mr-4 text-white hover:bg-white/20 pointer-events-auto disabled:opacity-30"
           >
             <ArrowRight className="h-6 w-6" />
@@ -273,13 +277,13 @@ export function PresentationViewer({ presentation, onBack }: PresentationViewerP
                 <div
                   className="bg-white rounded-full h-2 transition-all duration-300"
                   style={{
-                    width: `${((currentSlideIndex + 1) / presentation.slides.length) * 100}%`
+                    width: `${Array.isArray(presentation.slides) && presentation.slides.length > 0 ? ((currentSlideIndex + 1) / presentation.slides.length) * 100 : 0}%`
                   }}
                 />
               </div>
             </div>
             <div className="text-white text-sm font-medium">
-              {currentSlideIndex + 1} / {presentation.slides.length}
+              {currentSlideIndex + 1} / {Array.isArray(presentation.slides) ? presentation.slides.length : 0}
             </div>
           </div>
         </div>

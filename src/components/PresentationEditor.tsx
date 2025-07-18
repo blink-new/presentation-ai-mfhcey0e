@@ -55,9 +55,13 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
     setCurrentPresentation(presentation)
   }, [presentation])
 
-  const selectedSlide = currentPresentation.slides[selectedSlideIndex]
+  const selectedSlide = Array.isArray(currentPresentation.slides) && currentPresentation.slides.length > 0 
+    ? currentPresentation.slides[selectedSlideIndex] 
+    : null
 
   const updateSlide = (updates: Partial<Slide>) => {
+    if (!Array.isArray(currentPresentation.slides)) return
+    
     const updatedSlides = currentPresentation.slides.map((slide, index) =>
       index === selectedSlideIndex ? { ...slide, ...updates } : slide
     )
@@ -72,13 +76,16 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
       theme: currentPresentation.theme,
       layout: 'content'
     }
-    const updatedSlides = [...currentPresentation.slides, newSlide]
+    const currentSlides = Array.isArray(currentPresentation.slides) ? currentPresentation.slides : []
+    const updatedSlides = [...currentSlides, newSlide]
     setCurrentPresentation({ ...currentPresentation, slides: updatedSlides })
     setSelectedSlideIndex(updatedSlides.length - 1)
   }
 
   const duplicateSlide = () => {
-    const slideToClone = currentPresentation.slides[selectedSlideIndex]
+    if (!selectedSlide || !Array.isArray(currentPresentation.slides)) return
+    
+    const slideToClone = selectedSlide
     const newSlide: Slide = {
       ...slideToClone,
       id: `slide-${Date.now()}`,
@@ -94,7 +101,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
   }
 
   const deleteSlide = () => {
-    if (currentPresentation.slides.length <= 1) return
+    if (!Array.isArray(currentPresentation.slides) || currentPresentation.slides.length <= 1) return
     
     const updatedSlides = currentPresentation.slides.filter((_, index) => index !== selectedSlideIndex)
     setCurrentPresentation({ ...currentPresentation, slides: updatedSlides })
@@ -102,6 +109,8 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
   }
 
   const moveSlide = (direction: 'up' | 'down') => {
+    if (!Array.isArray(currentPresentation.slides)) return
+    
     const slides = [...currentPresentation.slides]
     const currentIndex = selectedSlideIndex
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
@@ -114,7 +123,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
   }
 
   const generateImage = async () => {
-    if (!selectedSlide.title && !selectedSlide.content) return
+    if (!selectedSlide || (!selectedSlide.title && !selectedSlide.content)) return
     
     setIsGeneratingImage(true)
     try {
@@ -177,7 +186,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                 className="text-lg font-semibold border-none p-0 h-auto bg-transparent"
               />
               <p className="text-sm text-muted-foreground">
-                {currentPresentation.slides.length} slides
+                {Array.isArray(currentPresentation.slides) ? currentPresentation.slides.length : 0} slides
               </p>
             </div>
           </div>
@@ -208,7 +217,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
             
             <ScrollArea className="h-[calc(100vh-200px)]">
               <div className="space-y-2">
-                {currentPresentation.slides.map((slide, index) => (
+                {Array.isArray(currentPresentation.slides) && currentPresentation.slides.map((slide, index) => (
                   <Card
                     key={slide.id}
                     className={`cursor-pointer transition-all ${
@@ -242,14 +251,14 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
               <Card className="aspect-video shadow-lg">
                 <CardContent className="p-0 h-full">
                   <div className={`h-full bg-gradient-to-br ${themes.find(t => t.id === currentPresentation.theme)?.colors} p-8 text-white rounded-lg`}>
-                    {selectedSlide.layout === 'title' && (
+                    {selectedSlide && selectedSlide.layout === 'title' && (
                       <div className="h-full flex flex-col justify-center text-center">
                         <h1 className="text-4xl font-bold mb-4">{selectedSlide.title}</h1>
                         <p className="text-xl opacity-90">{selectedSlide.content}</p>
                       </div>
                     )}
                     
-                    {selectedSlide.layout === 'content' && (
+                    {selectedSlide && selectedSlide.layout === 'content' && (
                       <div className="h-full flex flex-col">
                         <h2 className="text-3xl font-bold mb-6">{selectedSlide.title}</h2>
                         <div className="flex-1">
@@ -258,7 +267,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                       </div>
                     )}
                     
-                    {selectedSlide.layout === 'image' && (
+                    {selectedSlide && selectedSlide.layout === 'image' && (
                       <div className="h-full flex flex-col">
                         <h2 className="text-3xl font-bold mb-6">{selectedSlide.title}</h2>
                         <div className="flex-1 flex items-center justify-center">
@@ -277,7 +286,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                       </div>
                     )}
                     
-                    {selectedSlide.layout === 'split' && (
+                    {selectedSlide && selectedSlide.layout === 'split' && (
                       <div className="h-full flex flex-col">
                         <h2 className="text-3xl font-bold mb-6">{selectedSlide.title}</h2>
                         <div className="flex-1 grid grid-cols-2 gap-8">
@@ -322,7 +331,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                       size="sm" 
                       variant="outline" 
                       onClick={deleteSlide}
-                      disabled={currentPresentation.slides.length <= 1}
+                      disabled={!Array.isArray(currentPresentation.slides) || currentPresentation.slides.length <= 1}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
@@ -340,7 +349,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                       size="sm" 
                       variant="outline" 
                       onClick={() => moveSlide('down')}
-                      disabled={selectedSlideIndex === currentPresentation.slides.length - 1}
+                      disabled={!Array.isArray(currentPresentation.slides) || selectedSlideIndex === currentPresentation.slides.length - 1}
                     >
                       <MoveDown className="h-4 w-4 mr-1" />
                       Move Down
@@ -357,16 +366,18 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                     <div>
                       <label className="text-sm font-medium mb-1 block">Title</label>
                       <Input
-                        value={selectedSlide.title}
+                        value={selectedSlide?.title || ''}
                         onChange={(e) => updateSlide({ title: e.target.value })}
+                        disabled={!selectedSlide}
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium mb-1 block">Content</label>
                       <Textarea
-                        value={selectedSlide.content}
+                        value={selectedSlide?.content || ''}
                         onChange={(e) => updateSlide({ content: e.target.value })}
                         rows={6}
+                        disabled={!selectedSlide}
                       />
                     </div>
                   </div>
@@ -384,9 +395,10 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                         <Button
                           key={layout.id}
                           size="sm"
-                          variant={selectedSlide.layout === layout.id ? 'default' : 'outline'}
+                          variant={selectedSlide?.layout === layout.id ? 'default' : 'outline'}
                           onClick={() => updateSlide({ layout: layout.id as any })}
                           className="flex flex-col gap-1 h-auto py-3"
+                          disabled={!selectedSlide}
                         >
                           <Icon className="h-4 w-4" />
                           <span className="text-xs">{layout.name}</span>
@@ -402,7 +414,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                 <div>
                   <h3 className="font-medium mb-3">Image</h3>
                   <div className="space-y-3">
-                    {selectedSlide.imageUrl && (
+                    {selectedSlide?.imageUrl && (
                       <div className="aspect-video bg-muted rounded overflow-hidden">
                         <img
                           src={selectedSlide.imageUrl}
@@ -414,7 +426,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                     <Button
                       size="sm"
                       onClick={generateImage}
-                      disabled={isGeneratingImage}
+                      disabled={isGeneratingImage || !selectedSlide}
                       className="w-full"
                     >
                       {isGeneratingImage ? (
@@ -429,7 +441,7 @@ export function PresentationEditor({ presentation, onSave, onBack, onPresent }: 
                         </>
                       )}
                     </Button>
-                    {selectedSlide.imageUrl && (
+                    {selectedSlide?.imageUrl && (
                       <Button
                         size="sm"
                         variant="outline"
